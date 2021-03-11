@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html><head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>Schéma de réseau</title>
+
+  <link rel="stylesheet" type="text/css" href="css/vis.css">
+  <script type="text/javascript" src="js/vis-network.js"></script>
+
+  <style type="text/css">
+  #mynetwork {
+      float:left;
+      width: 100%;
+      height: 100%;
+      margin:5px;
+      border: 1px solid lightgray;
+  }
+
+  .scroll {
+    width: 200px; 
+    max-height: 200px; 
+    overflow-x: hidden; 
+    overflow-x: auto; 
+  }
+
+  </style>
+</head>
+<body>
+
+<div id="mynetwork">
+  <div class="vis-network" style="position: relative; overflow: hidden; user-select: none; width: 100%; height: 100%;" tabindex="900">
+    <canvas style="position: relative; touch-action: none; user-select: none; width: 100%; height: 100%;"></canvas>
+  </div>
+</div>
+
+
+<input type="file" id="fileInput" onchange="importFile();" style="border: 1px solid #000000; padding: 10px"/><br>
+<br>
+<button onclick="toggleSettings();">Montrer les paramètres</button>
+<div id="settings" style="display: none">
+<br>
+
+  <table border="1px">
+  <tr><th width="300px">Réglages</th><th width="100px">Liaisons</th><th width="100px">Points</th></tr>
+  <tr><td>
+  <input type="text" name="searchAPI" id="searchAPI" placeholder="Recherche API">
+  <button onclick="searchAPI();">Recherche</button><br>
+
+  <select id="searchResults" multiple="multiple" onchange="focusResult(this);"></select>
+
+  <br>
+  <br>
+  <button onclick="restaurerAffichage();">Réorganiser</button>
+  <button onclick="redraw();">Reset schéma</button><br>
+  </td><td>
+  <div id="cb_edges" class="scroll"></div>
+  </td><td>
+  <div id="cb_nodes" class="scroll"></div>
+  </td></tr></table>
+
+</div>
+<br>
+
+<script type="text/javascript">
+
+var network;
+var tabnodes = new vis.DataSet();
+var tabedges = new vis.DataSet();
+var nodesView = new vis.DataView();
+var edgesView = new vis.DataView();
+
+var edgesFilterValues, nodesFilterValues;
+
+
+var options = { 
+  groups: {
+  },
+  physics: {
+    stabilization: {
+      enabled: true,
+      iterations: 180, // maximum number of iteration to stabilize
+      updateInterval: 10,
+      onlyDynamicEdges: false,
+      fit: true
+    }
+  },
+  interaction: {
+    navigationButtons: true,
+    keyboard: true
+  },
+  layout:{
+    improvedLayout:false,
+    randomSeed:3
+  },
+  autoResize: true,
+  height: getHeight() + "px",
+};
+
+
+window.onresize = function() {
+   network.setOptions({
+      height: getHeight() + "px",
+  });
+}
+
+function getHeight() {
+    return (window.innerHeight - 120);
+}
+
+draw({},options);
+
+
+function draw(data, options) {
+  var container = document.getElementById('mynetwork');
+  network = new vis.Network(container, data, options);
+}
+
+
+function redraw()
+{
+  setFilter();
+ 
+  draw({nodes:nodesView, edges:edgesView}, options);
+  network.physics.physicsEnabled = false;
+}
+
+function restaurerAffichage()
+{
+  network.stabilize();
+}
+
+
+function importFile() {
+  var fileInput = document.getElementById('fileInput');
+  var fileReader = new FileReader();
+
+  fileReader.onload = function (e) {
+	console.log(fileReader.result);
+    eval(fileReader.result);
+    redraw();
+  }
+  fileReader.readAsText(fileInput.files[0]);
+}
+
+
+function toggleSettings()
+{
+  var x = document.getElementById("settings");
+  if (x.style.display == "block") x.style.display = "none";
+  else x.style.display = "block";
+}
+
+/////////////// RECHERCHE
+
+
+function searchAPI()
+{
+  var searchStr = document.getElementById('searchAPI').value.toUpperCase();
+  var elmtResults = document.getElementById('searchResults');
+  var tab = nodesView.get();
+  var results = [];
+  elmtResults.innerHTML = '';
+
+  for (var i = 0, n = tab.length; i < n ; i++)
+  {
+    var label = tab[i].label.toUpperCase();
+    if (label.includes(searchStr))
+      results.push({id:tab[i].id, label:tab[i].label});
+  }
+
+  if (results.length == 1)
+  {
+    network.selectNodes([tab[i].id]);
+    network.focus(tab[i].id);
+  }
+  else
+  {
+    for (var i = 0; i < results.length; i++) {
+      elmtResults.innerHTML += '<option value="'+results[i].id+'">'+ results[i].label +'</option>';
+    }
+  }
+}
+
+
+function focusResult(elmt)
+{
+  var selectedId = [];
+
+  for (var i = 0; i < elmt.selectedOptions.length; i++) {
+    selectedId.push(elmt.selectedOptions[i].value)
+  }
+
+  network.selectNodes(selectedId);
+  network.focus(selectedId[0]);
+}
+
+
+////////filter part
+
+function buildTab(tab, type)
+{
+  var elmt = document.getElementById("cb_" + type);
+  elmt.innerHTML = '';
+
+  tabValues = { 'edges': [], 'nodes': [] };
+  tab = tab.get();
+
+  for (var i = 0, n = tab.length - 1;  i < n; i++)
+  {
+    if (!tabValues[type].includes(tab[i].group))
+    {
+      elmt.innerHTML += '<label><input type="checkbox" name="'+ type +'Filter" value="'
+                        + tab[i].group +'" checked="checked">' +
+                        '<span style="color:'+ tab[i].color +'">'+ tab[i].group +'</span></label><br>';
+      
+      tabValues[type].push(tab[i].group);
+
+      if (type == "edges") edgesFilterValues[tab[i].group] = true;
+      else nodesFilterValues[tab[i].group] = true;
+    }
+  }
+}
+
+
+function setFilter()
+{
+  fieldFilter = 'group';
+
+  nodesFilterValues = {};
+  edgesFilterValues = {};
+
+  buildTab(tabnodes, 'nodes');
+  buildTab(tabedges, 'edges');
+
+  nodesView = new vis.DataView(tabnodes, { filter: (node) => { return nodesFilterValues[node[fieldFilter]] } });
+  edgesView = new vis.DataView(tabedges, { filter: (edge) => { return edgesFilterValues[edge[fieldFilter]] } });
+
+  document.getElementsByName('nodesFilter').forEach(filter => 
+    filter.addEventListener('change', (e) => {
+      const { value, checked } = e.target
+      nodesFilterValues[value] = checked
+      nodesView.refresh()
+  }));
+
+  document.getElementsByName('edgesFilter').forEach(filter => 
+    filter.addEventListener('change', (e) => {
+      const { value, checked } = e.target
+      edgesFilterValues[value] = checked
+      edgesView.refresh()
+  }));
+}
+
+</script>
+</body></html>

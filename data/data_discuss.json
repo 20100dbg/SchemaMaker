@@ -1,0 +1,24 @@
+tabnodes = new vis.DataSet([
+{'id': "1", 'label': "ABDEL", 'alias': "", 'value': "3", 'shape': "dot", 'group': "1", 'color': "#97C2FC"},
+{'id': "2", 'label': "BERR", 'alias': "", 'value': "3", 'shape': "dot", 'group': "1", 'color': "#97C2FC"},
+{'id': "3", 'label': "CHARLIE", 'alias': "", 'value': "1", 'shape': "dot", 'group': "1", 'color': "#97C2FC"},
+{'id': "4", 'label': "GORRIGAN", 'alias': "", 'value': "2", 'shape': "dot", 'group': "2", 'color': "#97C2FC"},
+{'id': "5", 'label': "HAPI", 'alias': "", 'value': "2", 'shape': "dot", 'group': "2", 'color': "#97C2FC"},
+{'id': "6", 'label': "STIVE", 'alias': "", 'value': "1", 'shape': "dot", 'group': "2", 'color': "#97C2FC"},
+{'id': "7", 'label': "JORGE", 'alias': "", 'value': "1", 'shape': "dot", 'group': "1", 'color': "#97C2FC"},
+{'id': "8", 'label': "CLODIO", 'alias': "", 'value': "3", 'shape': "dot", 'group': "3", 'color': "#97C2FC"},
+{'id': "9", 'label': "RESUS", 'alias': "", 'value': "2", 'shape': "dot", 'group': "3", 'color': "#97C2FC"},
+{'id': "10", 'label': "FAX", 'alias': "", 'value': "2", 'shape': "dot", 'group': "3", 'color': "#97C2FC"},
+]);
+tabedges = new vis.DataSet([
+{'from': "1", 'to': "2", 'group': "1", 'value': "0", 'color': "#2B7CE9", 'arrows': "to, from"},
+{'from': "3", 'to': "2", 'group': "1", 'value': "0", 'color': "#2B7CE9", 'arrows': "to, from"},
+{'from': "1", 'to': "4", 'group': "2", 'value': "0", 'color': "#C5000B", 'arrows': "to, from"},
+{'from': "4", 'to': "5", 'group': "2", 'value': "0", 'color': "#C5000B", 'arrows': "to, from"},
+{'from': "6", 'to': "5", 'group': "2", 'value': "0", 'color': "#C5000B", 'arrows': "to, from"},
+{'from': "7", 'to': "2", 'group': "1", 'value': "0", 'color': "#2B7CE9", 'arrows': "to, from"},
+{'from': "1", 'to': "8", 'group': "3", 'value': "0", 'color': "#FFAA11", 'arrows': "to, from"},
+{'from': "9", 'to': "8", 'group': "3", 'value': "0", 'color': "#FFAA11", 'arrows': "to, from"},
+{'from': "10", 'to': "8", 'group': "3", 'value': "0", 'color': "#FFAA11", 'arrows': "to, from"},
+{'from': "10", 'to': "9", 'group': "3", 'value': "0", 'color': "#FFAA11", 'arrows': "to, from"},
+]);

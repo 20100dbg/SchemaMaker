@@ -1,0 +1,54 @@
+////////filter part
+
+function buildTab(tab, type)
+{
+  var elmt = document.getElementById("cb_" + type);
+  elmt.innerHTML = '';
+
+  tabValues = { 'edges': [], 'nodes': [] };
+  tab = tab.get();
+
+  for (var i = 0, n = tab.length - 1;  i < n; i++)
+  {
+    if (!tabValues[type].includes(tab[i].group))
+    {
+      elmt.innerHTML += '<label><input type="checkbox" name="'+ type +'Filter" value="'
+                        + tab[i].group +'" checked="checked">' +
+                        '<span style="color:'+ tab[i].color +'">'+ tab[i].group +'</span></label><br>';
+      
+      tabValues[type].push(tab[i].group);
+
+      if (type == "edges") edgesFilterValues[tab[i].group] = true;
+      else nodesFilterValues[tab[i].group] = true;
+    }
+  }
+}
+
+
+function setFilter()
+{
+  fieldFilter = 'group';
+
+  nodesFilterValues = {};
+  edgesFilterValues = {};
+
+  buildTab(tabnodes, 'nodes');
+  buildTab(tabedges, 'edges');
+
+  nodesView = new vis.DataView(tabnodes, { filter: (node) => { return nodesFilterValues[node[fieldFilter]] } });
+  edgesView = new vis.DataView(tabedges, { filter: (edge) => { return edgesFilterValues[edge[fieldFilter]] } });
+
+  document.getElementsByName('nodesFilter').forEach(filter => 
+    filter.addEventListener('change', (e) => {
+      const { value, checked } = e.target
+      nodesFilterValues[value] = checked
+      nodesView.refresh()
+  }));
+
+  document.getElementsByName('edgesFilter').forEach(filter => 
+    filter.addEventListener('change', (e) => {
+      const { value, checked } = e.target
+      edgesFilterValues[value] = checked
+      edgesView.refresh()
+  }));
+}

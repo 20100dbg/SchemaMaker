@@ -1,0 +1,16 @@
+tabnodes = new vis.DataSet([
+{'id': "1", 'label': "UI", 'alias': "", 'value': "5", 'shape': "box", 'group': "API", 'color': "#97C2FC"},
+{'id': "7", 'label': "ABOU SAMIR AL TADJIKI", 'alias': "", 'value': "1", 'shape': "box", 'group': "API", 'color': "#97C2FC"},
+{'id': "1520", 'label': "ABOU OTTMAN", 'alias': "", 'value': "1", 'shape': "box", 'group': "API", 'color': "#97C2FC"},
+{'id': "4", 'label': "UI1", 'alias': "", 'value': "2", 'shape': "box", 'group': "API", 'color': "#97C2FC"},
+{'id': "5", 'label': "UI2", 'alias': "", 'value': "1", 'shape': "box", 'group': "API", 'color': "#97C2FC"},
+{'id': "6", 'label': "N10", 'alias': "", 'value': "1", 'shape': "box", 'group': "API", 'color': "#97C2FC"},
+{'id': "9", 'label': "ABOU ALI HOUKAMAE", 'alias': "", 'value': "1", 'shape': "box", 'group': "API", 'color': "#97C2FC"},
+{'id': "10", 'label': "ABOU JAAFAR", 'alias': "", 'value': "2", 'shape': "box", 'group': "API", 'color': "#97C2FC"},
+]);
+tabedges = new vis.DataSet([
+{'from': "1", 'to': "7", 'group': "M417.500", 'value': "1", 'FRQ': "M417.500", 'color': "#2B7CE9", 'arrows': "to, from"},
+{'from': "1", 'to': "1520", 'group': "M418.955", 'value': "1", 'FRQ': "M418.955", 'color': "#C5000B", 'arrows': "to, from"},
+{'from': "4", 'to': "5", 'group': "M418.955", 'value': "1", 'FRQ': "M418.955", 'color': "#C5000B", 'arrows': "to, from"},
+{'from': "1", 'to': "4", 'group': "M418.955", 'value': "1", 'FRQ': "M418.955", 'color': "#C5000B", 'arrows': "to, from"},
+]);

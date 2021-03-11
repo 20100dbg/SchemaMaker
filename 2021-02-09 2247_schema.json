@@ -1,0 +1,19 @@
+tabnodes = new vis.DataSet([
+{'id':"1", 'label':"ABOU", 'value':"4", 'shape':"box", 'group':"INF", 'color':"#97C2FC", },
+{'id':"2", 'label':"BAKER", 'value':"3", 'shape':"box", 'group':"ART", 'color':"#97C2FC", },
+{'id':"3", 'label':"JAFAR", 'value':"1", 'shape':"box", 'group':"ART", 'color':"#97C2FC", },
+{'id':"4", 'label':"HAMZA", 'value':"1", 'shape':"box", 'group':"ART", 'color':"#97C2FC", },
+{'id':"5", 'label':"ANAS", 'value':"1", 'shape':"box", 'group':"INF", 'color':"#97C2FC", },
+{'id':"6", 'label':"SAMIR", 'value':"1", 'shape':"box", 'group':"INF", 'color':"#97C2FC", },
+{'id':"7", 'label':"ALI", 'value':"2", 'shape':"box", 'group':"GEN", 'color':"#97C2FC", },
+{'id':"8", 'label':"SLIMANE", 'value':"1", 'shape':"box", 'group':"GEN", 'color':"#97C2FC", },
+]);
+tabedges = new vis.DataSet([
+{'from':"1", 'to':"5", 'label':"FRQ INF", 'color':"#2B7CE9" },
+{'from':"1", 'to':"6", 'label':"FRQ INF", 'color':"#2B7CE9" },
+{'from':"1", 'to':"2", 'label':"FRQ ART", 'color':"#C5000B" },
+{'from':"1", 'to':"7", 'label':"FRQ GEN", 'color':"#FFAA11" },
+{'from':"2", 'to':"3", 'label':"FRQ ART", 'color':"#C5000B" },
+{'from':"2", 'to':"4", 'label':"FRQ ART", 'color':"#C5000B" },
+{'from':"7", 'to':"8", 'label':"FRQ GEN", 'color':"#FFAA11" },
+]);

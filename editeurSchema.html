@@ -1,0 +1,422 @@
+﻿<!DOCTYPE html>
+<html><head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>Editeur de schéma</title>
+
+  <meta charset="utf-8">
+
+
+  <script type="text/javascript" src="js/vis-network.js"></script>
+  <script type="text/javascript" src="js/vis-import.js"></script>
+  <script type="text/javascript" src="js/vis-manual.js"></script>
+  <script type="text/javascript" src="js/vis-filter.js"></script>
+  <script type="text/javascript" src="js/vis-cluster.js"></script>
+  <script type="text/javascript" src="js/jquery-3.4.1.js"></script>
+
+
+
+
+  <link rel="stylesheet" type="text/css" href="css/vis.css">
+  <link rel="stylesheet" type="text/css" href="css/grid.css">
+  
+  <style type="text/css">
+  #mynetwork { float:left; width: 100%; height: 100%; margin:5px; border: 1px solid lightgray;}
+  #config { float:left; width: 400px; height: 600px;}
+  textarea { width: 100%; height: 150px; }
+  .bordure { border: 1px solid #000000; padding: 5px; }
+  .fileInput{ border: 1px solid #000000; padding: 10px; width:97%; }
+  .labelInput{ margin-top: -30px; position: relative; }
+  input[type=text] { width: 100px; }
+  </style>
+
+</head>
+<body>
+
+<div id="mynetwork">
+  <div class="vis-network" style="position: relative; overflow: hidden; user-select: none; width: 100%; height: 100%;" tabindex="900">
+    <canvas style="position: relative; touch-action: none; user-select: none; width: 100%; height: 100%;"></canvas>
+  </div>
+</div>
+
+<div class="col_9">
+  <button onclick="toggle('import');">Import</button>
+  <button onclick="toggle('manual');">Création manuelle</button>
+  <button onclick="toggle('filter');">Filtres d'affichage</button>
+  <button onclick="toggle('settings');">Paramètres</button>
+  <button onclick="toggle('cluster');">Cluster</button>
+</div>
+<div class="col_3">
+  <button onclick="network.stabilize();">Réorganiser</button>
+  <button onclick="reset();">Re-dessiner</button>
+  <button onclick="deleteAll();">SUPPRIMER</button>
+</div>
+
+<div class="menu" id="import" style="display: none">
+
+  <div class="col_6">
+    <textarea id="import_json" placeholder="Code JSON"></textarea>
+    <br>
+    <input type="file" class="fileInput" id="jsonFileInput" onchange="importFile('json');" /><br>
+    <br>
+
+    <input type="button" onclick="importJSON()" value="import">
+    <input type="button" onclick="b_exportJSON()" value="export">
+  </div>
+
+  <div class="col_6">
+    <textarea id="import_dot" placeholder="Code DOT"></textarea>
+    <br>
+    <input type="file" class="fileInput" id="dotFileInput" onchange="importFile('dot');" /><br>
+    <br>
+    <input type="button" onclick="importDOT()" value="import">
+    <br>
+    <span id="error"></span>
+  </div>
+
+</div>
+
+
+<div class="menu" id="manual" style="display: none">
+
+  <div class="col_4 bordure">
+
+    <h4>Noeud</h4>
+
+    <div class="col_3">
+      <label><input type="radio" name="actionNode" value="Modifier" onclick="toggleButton();"> Modifier</label><br>
+      <label><input type="radio" name="actionNode" value="Ajouter" checked="" onclick="toggleButton();"> Ajouter</label><br>
+      Groupe : 
+    </div>
+
+    <div class="col_4">
+      <select id="node-id"></select><br>
+      <input type="text" id="node-label" placeholder="Nom"><br>
+      <input type="text" id="node-group">
+      <br>
+    </div>
+
+    <div class="clear"></div>
+
+    <br>
+    Mise en forme<br>
+
+    <div class="col_3">
+    <label><input type="radio" name="node-format" value="groupe" checked="checked"> Hérité</label><br>
+    <label><input type="radio" name="node-format" value="shape"> Forme</label><br>
+    <label><input type="radio" name="node-format" value="image"> Image</label>
+    </div>
+
+    <div class="col_9">
+      <br>
+
+    <select id="node-shape">
+      <option value="dot">dot</option>
+      <option value="box">box</option>
+      <option value="diamond">diamond</option>
+      <option value="database">database</option>
+      <option value="star">star</option>
+      <option value="ellipse">ellipse</option>
+      <option value="triangle">triangle</option>
+      <option value="triangleDown">triangleDown</option>
+    </select>
+
+    <input type="color" id="node-color"><br>
+
+    <input type="text" id="node-image" placeholder="Image"><br>
+    </div>
+    
+    <div class="clear"></div>
+
+    <button id="b_addNode" onclick="editNodes('add');">Ajouter</button>
+    <button id="b_updateNode" onclick="editNodes('update');" style="display: none;">Modifier</button>
+    <button id="b_removeNode" onclick="editNodes('remove');" style="display: none;">Supprimer</button>
+
+  </div>
+  <div class="col_4 bordure">
+
+    <h4>Liaisons</h4>
+    <select id="edge-id"></select>
+    <button onclick="editEdges('remove');">Supprimer</button>
+    <br><br>
+
+    <select id="edge-from"></select> -> 
+    <select id="edge-to"></select>
+    <input type="color" id="edge-color">
+    <button onclick="editEdges('add');">Ajouter</button>
+
+  </div>
+  <div class="col_3 bordure">
+
+    <h4>Groupe</h4>
+    <select id="groupName"></select>
+
+    <select id="groupShape">
+      <option value="dot">dot</option>
+      <option value="box">box</option>
+      <option value="diamond">diamond</option>
+      <option value="database">database</option>
+      <option value="star">star</option>
+      <option value="ellipse">ellipse</option>
+      <option value="triangle">triangle</option>
+      <option value="triangleDown">triangleDown</option>
+    </select>
+
+    <input type="color" id="groupColor">
+
+    <br><br>
+    <button onclick="addGroup();">Modifier groupe</button>
+
+  </div>
+</div>
+
+
+<div class="menu" id="filter" style="display: none">
+
+  <h4>Appliquer des filtres</h4>
+
+  <div class="col_5 bordure">
+    <h4>Noeud</h4>
+    Attribut : <select id="nodeFilterField" onchange="selectFilter('node')"></select><br>
+    Valeurs : <select id="nodeFilterValues" multiple=""></select>
+  </div>
+
+  <div class="col_5 bordure">
+    <h4>Liaison</h4>
+    Attribut : <select id="edgeFilterField" onchange="selectFilter('edge')"></select><br>
+    Valeurs : <select id="edgeFilterValues" multiple=""></select>
+  </div>
+
+  <div class="col_12">
+    <label><input type="checkbox" name="" id="filterShow" checked=""> N'afficher que les valeurs choisies</label><br>
+    <button onclick="ApplyFilter();">Appliquer</button>
+  </div>
+
+</div>
+
+
+<div class="menu" id="settings" style="display: none">
+
+  <div class="col_12">
+    <label><input type="checkbox" id="enableNavigation"> Outils de navigation</label><br>
+    <label><input type="checkbox" id="enableEditeur"> Outils d'édition</label><br>
+    <label><input type="checkbox" id="enablePhysique"> Activer la physique</label><br>
+    <label><input type="checkbox" id="randomDispostion"> Disposition aléatoire</label><br>
+    <br>
+    Hauteur schéma (px) : <input type="text" id="schemaHeight" placeholder=""><br>
+    
+    <br><button onclick="ApplyOptions();">Appliquer</button>
+  </div>
+
+</div>
+
+
+<div class="menu" id="cluster" style="display: none">
+
+  <h4>Cluster</h4>
+
+  Attribut : <select id="clusterAttribut" onchange="selectCluster();"></select><br>
+  Valeurs : <select id="clusterValues" multiple=""></select>
+
+  <br>
+  <button onclick="ApplyCluster();">Appliquer</button><br>
+
+</div>
+
+
+<script type="text/javascript">
+var network;
+var tabnodes = new vis.DataSet();
+var tabedges = new vis.DataSet();
+var nodesView = new vis.DataView();
+var edgesView = new vis.DataView();
+var dossierImg = 'images/';
+var height = window.innerHeight - 100;
+document.getElementById('schemaHeight').value = height;
+
+var options = { 
+groups: {
+},
+physics: false,
+/* {
+  stabilization: {
+    enabled: true,
+    iterations: 10, // maximum number of iteration to stabilize
+    updateInterval: 10,
+    onlyDynamicEdges: false,
+    fit: true
+  }
+}, */
+interaction: {
+  navigationButtons: true,
+  keyboard: true
+},
+layout:{
+  improvedLayout:false,
+  randomSeed:3
+},
+autoResize: true,
+height: getHeight() + "px",
+};
+
+
+//var options = {};
+
+window.onresize = function() {
+   network.setOptions({
+      height: getHeight() + "px",
+  });
+}
+
+
+function getHeight() {
+    //return (window.innerHeight - 350);
+    return height;
+}
+
+draw({},options, true);
+
+/////////////////
+
+
+function b_exportJSON()
+{
+  txt = exportJSON();
+  //document.getElementById('import_json').value
+  downloadFile("export.json", txt);
+}
+
+
+
+
+//////////////// GESTION NETWORK
+
+function draw(data, options, resetFilter = false) {
+  var container = document.getElementById('mynetwork');
+  network = new vis.Network(container, data, options);
+  network.stabilize();
+
+  if (resetFilter)
+  {
+    loadManualInterface();
+    initFilter();
+  }
+}
+
+function reset() {
+  nodesView = new vis.DataView(tabnodes);
+  edgesView = new vis.DataView(tabedges);
+
+  draw({nodes:nodesView, edges:edgesView}, options, true);
+}
+
+function deleteAll()
+{
+  tabnodes = new vis.DataSet();
+  tabedges = new vis.DataSet();
+
+  loadManualInterface();
+  reset();
+}
+
+function ApplyOptions() {
+
+  options['height'] = document.getElementById('schemaHeight').value + "px";
+  options['interaction'] = {navigationButtons: document.getElementById('enableNavigation').checked};
+  options['manipulation'] = document.getElementById('enableEditeur').checked;
+  options['physics'] = document.getElementById('enablePhysique').checked;
+  options['layout'] = (document.getElementById('randomDispostion').checked) ? {randomSeed:2} : {};
+
+  network.setOptions(options);
+}
+
+
+
+////////////////// MISC
+
+
+function importFile(type) {
+  var fileInput = document.getElementById(type + 'FileInput');
+  var div = document.getElementById('import_' + type);
+  var fileReader = new FileReader();
+
+  fileReader.onload = function (e) { 
+    div.value = fileReader.result;
+  }
+  fileReader.readAsText(fileInput.files[0]);
+}
+
+
+function readFile(url)
+{
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, false);
+  xhr.overrideMimeType("text/plain");
+  var txt;
+
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == 4 && (xhr.status == 200 || xhr.status == 0))
+        txt = xhr.responseText;
+  }
+  xhr.send(null);
+
+  return txt;
+}
+
+
+function downloadFile(filename, txt)
+{
+  var element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
+  element.setAttribute('download', filename);
+  element.style.display = 'none';
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
+
+
+
+
+////////// FONCTIONS INTERFACE
+
+
+function toggle(name)
+{
+  var x = document.getElementById(name);
+  if (x.style.display == "block") x.style.display = "none";
+  else
+  {
+    $(".menu").hide();
+    x.style.display = "block";
+  }
+}
+
+function toggleButton()
+{
+  var isUpdating = ($("input[name=actionNode]:checked").val() == 'Modifier');
+
+  document.getElementById('b_addNode').style.display = (isUpdating) ? 'none' : 'inline';
+  document.getElementById('b_updateNode').style.display = (isUpdating) ? 'inline' : 'none';
+  document.getElementById('b_removeNode').style.display = (isUpdating) ? 'inline' : 'none';
+}
+
+////////////////////////////////GROUP
+
+function addGroup()
+{
+  var name = document.getElementById('groupName').value;
+  var shape = document.getElementById('groupShape').value;
+  var color = document.getElementById('groupColor').value;
+  var groupes = {};
+  groupes[name] = {shape: shape, color: color};
+  options.groups[name] = groupes[name];
+
+  //document.getElementById('groupName').innerHTML += "<option value='"+ name +"'>"+ name +"</option>";
+
+  network.setOptions({groups: groupes});
+
+  reset();
+}
+</script>
+
+</body></html>

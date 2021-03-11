@@ -1,0 +1,20 @@
+tabnodes = new vis.DataSet([
+{'id': "1", 'label': "ABOU", 'group': "INF"},
+{'id': "2", 'label': "BAKER", 'group': "ART"},
+{'id': "3", 'label': "JAFAR", 'group': "ART"},
+{'id': "4", 'label': "HAMZA", 'group': "ART"},
+{'id': "5", 'label': "ANAS", 'group': "INF"},
+{'id': "6", 'label': "SAMIR", 'group': "INF"},
+{'id': "7", 'label': "ALI", 'group': "GEN"},
+{'id': "8", 'label': "SLIMANE", 'group': "GEN"},
+]);
+
+tabedges = new vis.DataSet([
+{'from': "1", 'to': "5",'group': "FRQ INF", 'value':"5", 'color': "#2B7CE9", 'arrows': "to, from"},
+{'from': "1", 'to': "6",'group': "FRQ INF", 'color': "#2B7CE9", 'arrows': "to, from"},
+{'from': "1", 'to': "2",'group': "FRQ ART", 'color': "#C5000B", 'arrows': "to, from"},
+{'from': "1", 'to': "7",'group': "FRQ GEN", 'color': "#FFAA11", 'arrows': "to, from"},
+{'from': "2", 'to': "3",'group': "FRQ ART", 'color': "#C5000B", 'arrows': "to, from"},
+{'from': "2", 'to': "4",'group': "FRQ ART", 'color': "#C5000B", 'arrows': "to, from"},
+{'from': "7", 'to': "8",'group': "FRQ GEN", 'color': "#FFAA11", 'arrows': "to, from"},
+]);

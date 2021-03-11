@@ -1,0 +1,9 @@
+items.add([
+{'id': 1, 'content': "Attaque terro etc", 'start': "2020-05-06 00:00:00", 'group': 1, 'editable': true},
+{'id': 2, 'content': "visite consul", 'start': "2020-05-08 08:53:00", 'end': "2020-05-13 17:15:00", 'group': 2, 'editable': false},
+{'id': 3, 'content': "some event", 'start': "2020-05-09 13:00:00", 'end': "2020-05-09 15:00:00", 'group': 1, 'editable': true},
+]);
+groups.add([
+{'id': 1, 'content': "Zone MO"},
+{'id': 2, 'content': "Zone Sahel"},
+]);

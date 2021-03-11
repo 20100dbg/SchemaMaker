@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html><head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>Schéma de réseau</title>
+  <link rel="stylesheet" type="text/css" href="css/vis.css">
+  <link rel="stylesheet" type="text/css" href="css/grid.css">
+  <script type="text/javascript" src="js/vis-network.js"></script>
+	<style type="text/css">
+	#mynetwork { float:left; width: 100%; height: 100%; margin:5px; border: 1px solid lightgray;}
+	#config { float:left; width: 400px; height: 600px;}
+	textarea { width: 100%; height: 150px; }
+	.bordure { border: 1px solid #000000; padding: 5px; }
+	.fileInput{ border: 1px solid #000000; padding: 10px; width:97%; }
+	.labelInput{ margin-top: -30px; position: relative; }
+	input[type=text] { width: 100px; }
+	</style>
+</head>
+<body>
+
+<div id="mynetwork">
+  <div class="vis-network" style="position: relative; overflow: hidden; user-select: none; width: 100%; height: 100%;" tabindex="900">
+    <canvas style="position: relative; touch-action: none; user-select: none; width: 100%; height: 100%;"></canvas>
+  </div>
+</div>
+
+<input type="file" id="fileInput" onchange="importFile();" style="border: 1px solid #000000; padding: 10px"/><br>
+<br>
+<button onclick="b_export();">Exporter schéma</button>
+<br>
+<button onclick="toggleEditTable();">Montrer les tableaux d'edition</button>
+<button onclick="toggleFilters();">Montrer les filtres</button>
+<br>
+
+<div id="editTables" style="display: none">
+	<table border="1px" id="editTableNodes"></table>
+	<button onclick="addNodeLine();">Ajouter node</button>
+	<br>
+	<br>
+
+	<table border="1px" id="editTableEdges"></table>
+	<button onclick="addEdgeLine();">Ajouter edge</button>
+	<br>
+	<button onclick="readFromEditTable();">Sauvegarder et appliquer</button>
+</div>
+
+<div class="menu" id="filter" style="display: none">
+
+  <div class="col_4 bordure">
+    <h4>Noeud</h4>
+    Attribut : <select id="nodeFilterField" onchange="selectFilter('node')"></select><br>
+    Valeurs : <select id="nodeFilterValues" multiple=""></select>
+  </div>
+
+  <div class="col_4 bordure">
+    <h4>Liaison</h4>
+    Attribut : <select id="edgeFilterField" onchange="selectFilter('edge')"></select><br>
+    Valeurs : <select id="edgeFilterValues" multiple=""></select>
+  </div>
+
+  <div class="col_3 bordure">
+    <label><input type="checkbox" name="" id="filterShow" checked=""> N'afficher que les valeurs choisies</label><br>
+    <br>
+	<button onclick="b_applyFilter();">Appliquer</button>
+  </div>
+
+</div>
+
+<br>
+<br>
+
+<script type="text/javascript">
+var network;
+var tabnodes = new vis.DataSet();
+var tabedges = new vis.DataSet();
+var jsonInitial = "";
+var jsonCurrent = "";
+var lastNodeId = -1;
+var lastEdgeId = -1;
+var filter = [];
+
+var options = { 
+  groups: { },
+  physics: {
+    stabilization: {
+      enabled: true,
+      iterations: 180,
+      updateInterval: 10,
+      onlyDynamicEdges: false,
+      fit: true
+    }
+  },
+  interaction: { navigationButtons: true, keyboard: true },
+  layout:{ improvedLayout:false,randomSeed:3 },
+  autoResize: true,
+  height: getHeight() + "px",
+};
+
+window.onresize = function() {
+   network.setOptions({
+      height: getHeight() + "px",
+  });
+}
+
+function getHeight() {
+    return (window.innerHeight - 120);
+}
+
+function draw(data, options, newData = false) {
+	var container = document.getElementById('mynetwork');
+	network = new vis.Network(container, data, options);
+	network.physics.physicsEnabled = false;
+	
+	if (newData)
+	{
+		buildEditTable();
+		initFilter();
+	}
+
+}
+
+function drawFromJSON(json)
+{
+	eval(json);
+	draw({nodes:tabnodes, edges:tabedges}, options);
+}
+
+function drawFromArrays(tNodes, tEdges)
+{
+	tabnodes = new vis.DataSet(tNodes);
+	tabedges = new vis.DataSet(tEdges);
+	draw({nodes:tabnodes, edges:tabedges}, options);
+}
+
+function restaurerAffichage()
+{
+	network.stabilize();
+}
+
+//fin network
+
+
+// edit table
+
+function tplEditTableNode(node)
+{
+	return '<tr id="editNode-'+ node.id +'"><td>'+ node.id +'</td><td>' +
+			'<input type="text" id="editNodeLabel-'+ node.id +'" value="'+ node.label +'"></td><td>' +
+			'<input type="text" id="editNodeGroup-'+ node.id +'" value="'+ node.group +'"></td><td>' +
+			'<input type="text" id="editNodeShape-'+ node.id +'" value="'+ node.shape +'"></td><td>' +
+			'<input type="color" id="editNodeColor-'+ node.id +'" value="'+ node.color +'"></td><td>' +
+			'<input type="button" onclick="deleteLine(\'editNode-'+ node.id +'\');">' +
+			'</td></tr>';
+}
+
+function tplEditTableEdge(edge)
+{
+	return '<tr id="editEdge-'+ edge.id +'"><td>'+ edge.id +'</td><td>' +
+			'<input type="text" id="editEdgeFrom-'+ edge.id +'" value="'+ edge.from +'"></td><td>' +
+			'<input type="text" id="editEdgeTo-'+ edge.id +'" value="'+ edge.to +'"></td><td>' +
+			'<input type="text" id="editEdgeLabel-'+ edge.id +'" value="'+ edge.label +'"></td><td>' +
+			'<input type="text" id="editEdgeGroup-'+ edge.id +'" value="'+ edge.group +'"></td><td>' +
+			'<input type="color" id="editEdgeColor-'+ edge.id +'" value="'+ edge.color +'"></td><td>' +
+			'<input type="button" onclick="deleteLine(\'editEdge-'+ edge.id +'\');">' +
+			'</td></tr>';
+}
+
+function buildEditTable()
+{
+	var editTableNodes = document.getElementById("editTableNodes");
+	editTableNodes.innerHTML = "<tr><th>Id</th><th>Label</th><th>group</th><th>shape</th><th>color</th><th>delete</th></tr>";
+	
+	var tab = tabnodes.get();
+	for (var i = 0, n = tab.length - 1;  i < n; i++)
+	{
+		editTableNodes.innerHTML += tplEditTableNode(tab[i]);
+		tmpId = parseInt(tab[i].id);
+		if (tmpId > lastNodeId) lastNodeId = tmpId;
+	}
+	
+	
+	var editTableEdges = document.getElementById("editTableEdges");
+	editTableEdges.innerHTML = "<tr><th>Id</th><th>From</th><th>To</th><th>label</th><th>group</th><th>color</th><th>delete</th></tr>";
+	
+	var tab = tabedges.get();
+	for (var i = 0, n = tab.length - 1;  i < n; i++)
+	{
+		tab[i].id = i;
+		editTableEdges.innerHTML += tplEditTableEdge(tab[i]);
+	}
+}
+
+
+function applyAndSaveEditTables()
+{
+	var tNodes = readFromEditTable('node');
+	var tEdges = readFromEditTable('edge');
+	
+	console.log(tNodes);
+	console.log(tEdges);
+	
+	drawFromArrays(tNodes, tEdges);
+}
+
+
+function readFromEditTable(type)
+{
+	var editTable = document.getElementById((type == 'node') ? "editTableNodes" : "editTableEdges");
+	var rows = editTable.childNodes;
+	var tab = [];
+	
+	for (var i = 1, n = rows.length - 1;  i < 2; i++)
+	{
+		id = rows[i].textContent;
+		
+		if (type == 'node')
+		{
+			nodeLabel = document.getElementById('editNodeLabel-' + id).value;
+			nodeGroup = document.getElementById('editNodeGroup-' + id).value;
+			nodeShape = document.getElementById('editNodeShape-' + id).value;
+			nodeColor = document.getElementById('editNodeColor-' + id).value;
+			
+			val = {id:id, label:nodeLabel, group:nodeGroup, shape:nodeShape, color:nodeColor};
+		}
+		else
+		{
+			edgeFrom = document.getElementById('editEdgeFrom-' + id).value;
+			edgeTo = document.getElementById('editEdgeTo-' + id).value;
+			edgeLabel = document.getElementById('editEdgeLabel-' + id).value;
+			edgeGroup = document.getElementById('editEdgeGroup-' + id).value;
+			edgeColor = document.getElementById('editEdgeColor-' + id).value;
+			
+			val = {id:id, from:edgeFrom, to:edgeTo, label:edgeLabel, group:edgeGroup, color:edgeColor};
+		}
+		
+		tab.push(val);
+	}
+	
+	return tab;
+	//drawFromArrays(tNodes, tEdges);
+}
+
+
+function addNodeLine()
+{
+	lastNodeId += 1;
+	var editTableNodes = document.getElementById("editTableNodes");
+	editTableNodes.innerHTML += tplEditTableNode({id:lastNodeId, shape:"box"});
+}
+
+function addEdgeLine()
+{
+	lastEdgeId += 1;
+	var editTableEdges = document.getElementById("editTableEdges");
+	editTableEdges.innerHTML += tplEditTableEdge({id:lastEdgeId});
+}
+
+function deleteLine(id)
+{
+	if (confirm("Supprimer la ligne ?"))
+	{
+		var obj = document.getElementById(id);
+		obj.parentNode.removeChild(obj);
+	}
+}
+
+// fin edit table
+
+
+
+//divers
+
+function toggleEditTable()
+{
+	var x = document.getElementById("editTables");
+	if (x.style.display == "block") x.style.display = "none";
+	else x.style.display = "block";
+}
+
+function toggleFilters()
+{
+	var x = document.getElementById("filter");
+	if (x.style.display == "block") x.style.display = "none";
+	else x.style.display = "block";
+}
+
+
+function toggleSettings()
+{
+	var x = document.getElementById("settings");
+	if (x.style.display == "block") x.style.display = "none";
+	else x.style.display = "block";
+}
+
+
+function getId(str)
+{
+	
+}
+
+function createUUID()
+{
+	var dt = new Date().getTime();
+	var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = (dt + Math.random()*16)%16 | 0;
+		dt = Math.floor(dt/16);
+		return (c=='x' ? r :(r&0x3|0x8)).toString(16);
+	});
+	return uuid;
+}
+
+
+// filtres
+
+function b_applyFilter()
+{
+	var tNodes = tabnodes.get();
+	var tEdges = tabedges.get();
+	
+	var nodeFilter = { valeurs: [], champ: document.getElementById('nodeFilterField').value };
+	var edgeFilter = { valeurs: [], champ: document.getElementById('edgeFilterField').value };
+
+	selectedOptions = document.getElementById('nodeFilterValues').selectedOptions;
+	for (var i = 0; i < selectedOptions.length; i++) nodeFilter.valeurs.push(selectedOptions[i].value);
+	selectedOptions = document.getElementById('edgeFilterValues').selectedOptions;
+	for (var i = 0; i < selectedOptions.length; i++) edgeFilter.valeurs.push(selectedOptions[i].value);
+	
+	console.log(nodeFilter);
+	console.log(edgeFilter);
+	
+	tNodes = applyFilter(tNodes, nodeFilter);
+	tEdges = applyFilter(tEdges, edgeFilter);
+	
+	drawFromArrays(tNodes, tEdges);
+}
+
+
+//filtre sur champ
+function applyFilter(tab, filtre, include = true)
+{
+	//filter = { champ : xxxx, valeurs : [] }
+
+	for (var i = tab.length - 1;  i > 0; i--)
+	{
+		keep = !include;
+		if (filtre.valeurs.includes(tab[i][filtre.champ])) keep = !keep;		
+		if (!keep) tab.splice(i,1);
+	}
+	
+	return tab;
+}
+
+function deleteOrphans()
+{
+	var tNodes = tabnodes.get();
+	var tEdges = tabnodes.get();
+	
+	for (var i = tNodes.length - 1;  i > 0; i--)
+	{
+		var flag = false;
+		for (var j = tEdges.length - 1;  j > 0 && !flag; j--)
+		{
+			if (tEdges[j].from == tNodes[i].id || tEdges[j].to == tNodes[i].id)
+				flag = true;
+		}
+		
+		if (!flag) tNodes.splice(i,1);
+	}
+	
+	drawFromArrays(tNodes, tEdges);
+}
+
+
+
+function selectFilter(type)
+{
+	var attr = document.getElementById(type + 'FilterField').value;
+	var divValues = document.getElementById(type + 'FilterValues');
+	var tab = filter[type][attr];
+
+	divValues.innerHTML = '';
+	for (var i = 0; i < tab.length; i++)
+		divValues.innerHTML += "<option value='"+ tab[i] +"'>"+ tab[i] +"</option>";
+}
+
+
+function showFilters(type)
+{
+	var divField = document.getElementById(type + 'FilterField');
+	divField.innerHTML = '<option>Choisir un filtre</option>';
+
+	for (var key in filter[type])
+		divField.innerHTML += "<option value='"+ key +"'>"+ key +"</option>";
+}
+
+
+function buildFilterTab(type)
+{
+	var tab = (type == 'node') ? tabnodes.get() : tabedges.get();
+	filter[type] = [];
+
+	for (var i = 0; i < tab.length; i++)
+	{
+		for (var key in tab[i])
+		{
+			if (key == "length") continue;
+			if (!(key in filter[type])) filter[type][key] = [];
+			if (!filter[type][key].includes(tab[i][key])) filter[type][key].push(tab[i][key]);
+		}
+	}
+}
+
+function initFilter()
+{
+	buildFilterTab('node');
+	buildFilterTab('edge');
+
+	showFilters('node');
+	showFilters('edge');
+}
+
+//fin filtres
+
+
+
+
+/////////////// RECHERCHE
+
+
+function searchAPI()
+{
+  var searchStr = document.getElementById('searchAPI').value.toUpperCase();
+  var elmtResults = document.getElementById('searchResults');
+  var tab = nodesView.get();
+  var results = [];
+  elmtResults.innerHTML = '';
+
+  for (var i = 0, n = tab.length; i < n ; i++)
+  {
+    var label = tab[i].label.toUpperCase();
+    if (label.includes(searchStr))
+      results.push({id:tab[i].id, label:tab[i].label});
+  }
+
+  if (results.length == 1)
+  {
+    network.selectNodes([tab[i].id]);
+    network.focus(tab[i].id);
+  }
+  else
+  {
+    for (var i = 0; i < results.length; i++) {
+      elmtResults.innerHTML += '<option value="'+results[i].id+'">'+ results[i].label +'</option>';
+    }
+  }
+}
+
+
+function focusResult(elmt)
+{
+  var selectedId = [];
+
+  for (var i = 0; i < elmt.selectedOptions.length; i++) {
+    selectedId.push(elmt.selectedOptions[i].value)
+  }
+
+  network.selectNodes(selectedId);
+  network.focus(selectedId[0]);
+}
+
+
+//fin recherche et sélection
+
+
+
+//import export
+
+function importFile() {
+	var fileInput = document.getElementById('fileInput');
+	var fileReader = new FileReader();
+
+	fileReader.onload = function (e) {
+		jsonInitial = jsonCurrent = fileReader.result;
+		drawFromJSON(jsonInitial);
+	}
+	fileReader.readAsText(fileInput.files[0]);
+}
+
+function b_export()
+{
+	txt = exportJSON();
+	downloadFile("export.json", txt);
+}
+
+function exportJSON()
+{
+  var txt = 'tabnodes = new vis.DataSet([\n';
+
+  tab = tabnodes.get();
+  for (var i = 0; i < tab.length; i++)
+  {
+    txt += '{';
+    for (var key in tab[i]) txt += "'"+ key +"': " + '"' + tab[i][key] + '",';
+    txt += '},\n';
+  }
+
+  txt += ']);\n\ntabedges = new vis.DataSet([\n';
+  tab = tabedges.get();
+  for (var i = 0; i < tab.length; i++)
+  {
+    txt += '{';
+    for (var key in tab[i]) txt += "'"+ key +"': " + '"' + tab[i][key] + '",';
+    txt += '},\n';
+  }
+ 
+  txt += ']);';
+  return txt;
+}
+
+function downloadFile(filename, txt)
+{
+  var element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
+  element.setAttribute('download', filename);
+  element.style.display = 'none';
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
+
+draw({},options);
+
+
+
+
+</script>
+</body></html>
